@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 🌳 Silsilah Keluarga (Family Tree App)
 
-## Getting Started
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-In%20Development-green)](#)
 
-First, run the development server:
+Aplikasi berbasis web/mobile interaktif untuk mencatat, mengelola, dan memvisualisasikan silsilah keluarga (pohon genealogi) antar generasi secara mudah dan rapi.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📸 Tampilan Aplikasi (Screenshots)
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+> *Tambahkan gambar atau GIF pratinjau aplikasi di sini.*
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Halaman Utama / Pohon Keluarga | Form Login |
+| :---: | :---: |
+| ![Dashboard](./git_image/dashboard.png) | ![Login](./git_image/login.png) |
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## ✨ Fitur Utama
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- 🌲 **Visualisasi Interaktif:** Menampilkan pohon keluarga dengan hirarki yang jelas dan dapat di-zoom/pan.
+- 👤 **Manajemen Profil Anggota:**
+  - Data diri (Nama lengkap, panggilan, tanggal lahir/wafat, foto).
+  - Hubungan keluarga (Orang tua, pasangan, anak, saudara).
+- 🔐 **Login & Register:** Terdapat fitur login dan register untuk mengakses aplikasi.
+- 💾 **Import & Export:** Terdapat fitur import dan export data untuk menyimpan dan memuat data silsilah keluarga.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🛠️ Teknologi yang Digunakan
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Frontend:** [Next.js]
+- **Backend:** [Node.js]
+- **Library Diagram/Pohon:** [D3.js]
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🚀 Cara Menjalankan Project (Installation)
+
+Prasyarat yang dibutuhkan:
+* [Node.js](https://nodejs.org/) (v22+) 
+* [Git](https://git-scm.com/)
+
+## 🔑 Akses Login Demo / Akun Default
+
+> **Catatan:** Gunakan kredensial di bawah ini untuk menguji aplikasi pada mode lokal/demo.
+
+| Role / Akses | Username | Password |
+| :--- | :--- | :--- |
+| **Admin** | `admin` | `123` |
+

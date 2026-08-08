@@ -1,0 +1,22 @@
+{
+    "users": [
+        {
+            "username": "admin",
+            "password": "123"
+        }
+    ],
+    "members": [
+        {
+            "id": "1",
+            "name": "Kakek Budi",
+            "birthYear": "1950",
+            "parentId": null
+        },
+        {
+            "id": "2",
+            "name": "Ayah Andi",
+            "birthYear": "1978",
+            "parentId": "1"
+        }
+    ]
+}
