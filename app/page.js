@@ -8,7 +8,7 @@ export default function Home() {
   const [authForm, setAuthForm] = useState({ username: '', password: '' });
 
   const [members, setMembers] = useState([]);
-  const [memberForm, setMemberForm] = useState({ name: '', birthYear: '', parentId: '' });
+  const [memberForm, setMemberForm] = useState({ name: '', birthYear: '', parentId: '', spouseId: '' });
   const [editingMember, setEditingMember] = useState(null);
   const [deletingMember, setDeletingMember] = useState(null);
 
@@ -78,7 +78,7 @@ export default function Home() {
     });
 
     if (res.ok) {
-      setMemberForm({ name: '', birthYear: '', parentId: '' });
+      setMemberForm({ name: '', birthYear: '', parentId: '', spouseId: '' });
       fetchData();
     }
   };
@@ -227,7 +227,17 @@ export default function Home() {
   }
 
   // Root members (Generasi pertama / tanpa induk)
-  const rootMembers = members.filter((m) => !m.parentId);
+  // Menyaring agar tidak merender pasangan dari root yang sudah dirender (menghindari duplikasi)
+  const rootMembers = members.filter((m) => {
+    if (m.parentId) return false;
+    if (m.spouseId) {
+      const spouse = members.find((s) => s.id === m.spouseId);
+      if (spouse && !spouse.parentId) {
+        return m.id < spouse.id; // Render only one of the couple as root
+      }
+    }
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 p-6">
@@ -288,6 +298,23 @@ export default function Home() {
                     {m.name} {m.birthYear ? `(${m.birthYear})` : ''}
                   </option>
                 ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Pasangan (Opsional)</label>
+              <select
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm focus:outline-none focus:border-blue-500"
+                value={memberForm.spouseId}
+                onChange={(e) => setMemberForm({ ...memberForm, spouseId: e.target.value })}
+              >
+                <option value="">-- Tanpa Pasangan --</option>
+                {members
+                  .filter((m) => !m.spouseId)
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} {m.birthYear ? `(${m.birthYear})` : ''}
+                    </option>
+                  ))}
               </select>
             </div>
             <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-sm font-semibold py-2 rounded-lg mt-2">
@@ -365,6 +392,28 @@ export default function Home() {
                     ))}
                 </select>
               </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1 font-semibold uppercase">Pasangan (Opsional)</label>
+                <select
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-100 focus:outline-none focus:border-blue-500 transition"
+                  value={editingMember.spouseId || ''}
+                  onChange={(e) => setEditingMember({ ...editingMember, spouseId: e.target.value || null })}
+                >
+                  <option value="">-- Tanpa Pasangan --</option>
+                  {members
+                    .filter(
+                      (m) =>
+                        m.id !== editingMember.id &&
+                        !isDescendant(m.id, editingMember.id) &&
+                        (!m.spouseId || m.spouseId === editingMember.id)
+                    )
+                    .map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} {m.birthYear ? `(${m.birthYear})` : ''}
+                      </option>
+                    ))}
+                </select>
+              </div>
               <div className="flex gap-2 justify-end pt-2">
                 <button
                   type="button"
@@ -425,42 +474,96 @@ export default function Home() {
 
 // Rekursif Tree Component
 function TreeNode({ node, allMembers, onEdit, onDelete }) {
-  const children = allMembers.filter((m) => m.parentId === node.id);
+  const spouseNode = allMembers.find((m) => m.id === node.spouseId);
+  
+  // Gabungkan anak dari kedua orang tua
+  const children = allMembers.filter((m) => m.parentId === node.id || (spouseNode && m.parentId === spouseNode.id));
+
+  // Hindari duplikasi jika anak dipasangkan dengan anak lain yang juga dirender di level ini
+  const visibleChildren = children.filter((m) => {
+    if (m.spouseId) {
+      const spouse = children.find((s) => s.id === m.spouseId);
+      if (spouse) {
+        return m.id < spouse.id; // Render only one as the main sub-tree node
+      }
+    }
+    return true;
+  });
 
   return (
-    <div className="border-l-2 border-blue-500/40 pl-4 py-1">
-      <div className="group relative bg-slate-900 border border-slate-700 p-2.5 rounded-xl inline-flex flex-col min-w-[180px] hover:border-blue-500 transition-all duration-200">
-        <div className="flex justify-between items-start gap-4">
-          <div>
-            <p className="font-semibold text-blue-400 text-sm">{node.name}</p>
-            {node.birthYear && <p className="text-xs text-slate-400">Tahun Lahir: {node.birthYear}</p>}
-          </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1.5 self-center">
-            <button
-              onClick={() => onEdit(node)}
-              className="text-slate-400 hover:text-blue-400 p-1 rounded hover:bg-slate-800 transition"
-              title="Edit"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-              </svg>
-            </button>
-            <button
-              onClick={() => onDelete(node)}
-              className="text-slate-400 hover:text-rose-500 p-1 rounded hover:bg-slate-800 transition"
-              title="Hapus"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
+    <div className="border-l-2 border-blue-500/40 pl-4 py-1.5">
+      <div className="flex items-center gap-3 mb-2 flex-wrap">
+        {/* Main Card */}
+        <div className="group relative bg-slate-900 border border-slate-700 p-2.5 rounded-xl inline-flex flex-col min-w-[180px] hover:border-blue-500 transition-all duration-200 shadow-md">
+          <div className="flex justify-between items-start gap-4">
+            <div>
+              <p className="font-semibold text-blue-400 text-sm">{node.name}</p>
+              {node.birthYear && <p className="text-xs text-slate-400">Tahun Lahir: {node.birthYear}</p>}
+            </div>
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1.5 self-center">
+              <button
+                onClick={() => onEdit(node)}
+                className="text-slate-400 hover:text-blue-400 p-1 rounded hover:bg-slate-800 transition"
+                title="Edit"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                </svg>
+              </button>
+              <button
+                onClick={() => onDelete(node)}
+                className="text-slate-400 hover:text-rose-500 p-1 rounded hover:bg-slate-800 transition"
+                title="Hapus"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Spouse Link and Card */}
+        {spouseNode && (
+          <>
+            <div className="flex items-center justify-center bg-rose-500/10 text-rose-500 border border-rose-500/20 text-xs w-6 h-6 rounded-full font-bold shadow-sm animate-pulse" title="Pasangan">
+              ❤️
+            </div>
+            <div className="group relative bg-slate-900 border border-slate-700 p-2.5 rounded-xl inline-flex flex-col min-w-[180px] hover:border-rose-500 transition-all duration-200 shadow-md">
+              <div className="flex justify-between items-start gap-4">
+                <div>
+                  <p className="font-semibold text-rose-400 text-sm">{spouseNode.name}</p>
+                  {spouseNode.birthYear && <p className="text-xs text-slate-400">Tahun Lahir: {spouseNode.birthYear}</p>}
+                </div>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1.5 self-center">
+                  <button
+                    onClick={() => onEdit(spouseNode)}
+                    className="text-slate-400 hover:text-blue-400 p-1 rounded hover:bg-slate-800 transition"
+                    title="Edit"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => onDelete(spouseNode)}
+                    className="text-slate-400 hover:text-rose-500 p-1 rounded hover:bg-slate-800 transition"
+                    title="Hapus"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {children.length > 0 && (
-        <div className="ml-3 mt-2 space-y-2">
-          {children.map((child) => (
+      {visibleChildren.length > 0 && (
+        <div className="ml-6 mt-2 space-y-2 border-l border-slate-700/60 pl-3">
+          {visibleChildren.map((child) => (
             <TreeNode key={child.id} node={child} allMembers={allMembers} onEdit={onEdit} onDelete={onDelete} />
           ))}
         </div>

@@ -25,14 +25,32 @@ export async function POST(request) {
                 name: body.name,
                 birthYear: body.birthYear || '',
                 parentId: body.parentId || null,
+                spouseId: body.spouseId || null,
             };
             currentData.members.push(newMember);
+
+            // Jika ada pasangan yang dipilih, pasangkan timbal-balik
+            if (newMember.spouseId) {
+                const spouseIndex = currentData.members.findIndex((m) => m.id === newMember.spouseId);
+                if (spouseIndex !== -1) {
+                    // Putuskan pasangan lama jika pasangan baru ini sudah punya pasangan
+                    const prevSpouseId = currentData.members[spouseIndex].spouseId;
+                    if (prevSpouseId) {
+                        const prevSpouseIndex = currentData.members.findIndex((m) => m.id === prevSpouseId);
+                        if (prevSpouseIndex !== -1) {
+                            currentData.members[prevSpouseIndex].spouseId = null;
+                        }
+                    }
+                    currentData.members[spouseIndex].spouseId = newMember.id;
+                }
+            }
+
             return NextResponse.json({ message: 'Anggota berhasil ditambahkan', member: newMember });
         }
 
         // Jika request mengedit anggota keluarga
         if (body.action === 'EDIT_MEMBER') {
-            const { id, name, birthYear, parentId } = body;
+            const { id, name, birthYear, parentId, spouseId } = body;
             const index = currentData.members.findIndex((m) => m.id === id);
             if (index === -1) {
                 return NextResponse.json({ error: 'Anggota tidak ditemukan' }, { status: 404 });
@@ -58,11 +76,42 @@ export async function POST(request) {
                 }
             }
 
+            const oldSpouseId = currentData.members[index].spouseId;
+            const newSpouseId = spouseId || null;
+
+            // Jika hubungan pasangan berubah
+            if (oldSpouseId !== newSpouseId) {
+                // Putuskan pasangan lama (jika ada)
+                if (oldSpouseId) {
+                    const oldSpouseIndex = currentData.members.findIndex((m) => m.id === oldSpouseId);
+                    if (oldSpouseIndex !== -1) {
+                        currentData.members[oldSpouseIndex].spouseId = null;
+                    }
+                }
+
+                // Hubungkan pasangan baru (jika ada)
+                if (newSpouseId) {
+                    const newSpouseIndex = currentData.members.findIndex((m) => m.id === newSpouseId);
+                    if (newSpouseIndex !== -1) {
+                        // Putuskan pasangan dari pasangan baru (jika ada)
+                        const newSpousesPrevSpouseId = currentData.members[newSpouseIndex].spouseId;
+                        if (newSpousesPrevSpouseId) {
+                            const prevSpouseOfNewSpouseIndex = currentData.members.findIndex((m) => m.id === newSpousesPrevSpouseId);
+                            if (prevSpouseOfNewSpouseIndex !== -1) {
+                                currentData.members[prevSpouseOfNewSpouseIndex].spouseId = null;
+                            }
+                        }
+                        currentData.members[newSpouseIndex].spouseId = id;
+                    }
+                }
+            }
+
             currentData.members[index] = {
                 ...currentData.members[index],
                 name: name,
                 birthYear: birthYear || '',
                 parentId: parentId || null,
+                spouseId: newSpouseId,
             };
 
             return NextResponse.json({ message: 'Anggota berhasil diperbarui', member: currentData.members[index] });
@@ -74,6 +123,16 @@ export async function POST(request) {
             const index = currentData.members.findIndex((m) => m.id === id);
             if (index === -1) {
                 return NextResponse.json({ error: 'Anggota tidak ditemukan' }, { status: 404 });
+            }
+
+            const deletedMember = currentData.members[index];
+
+            // Hubungan pasangan: bersihkan spouseId dari pasangan yang ditinggalkan
+            if (deletedMember.spouseId) {
+                const spouseIndex = currentData.members.findIndex((m) => m.id === deletedMember.spouseId);
+                if (spouseIndex !== -1) {
+                    currentData.members[spouseIndex].spouseId = null;
+                }
             }
 
             // Hapus anggota

@@ -10,13 +10,15 @@
             "id": "1",
             "name": "Kakek Budi",
             "birthYear": "1950",
-            "parentId": null
+            "parentId": null,
+            "spouseId": null
         },
         {
             "id": "2",
             "name": "Ayah Andi",
             "birthYear": "1978",
-            "parentId": "1"
+            "parentId": "1",
+            "spouseId": null
         }
     ]
 }
